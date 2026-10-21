@@ -1,4 +1,4 @@
-# Parte 1 — Casos de caja negra
+# Parte 1
 
 Los casos se elaboraron usando únicamente ESPECIFICACION.md, sin analizar el código.
 
