@@ -158,21 +158,43 @@ def calcular_envio(subtotal, zona):
     )
 
 
-def calcular_total(carrito, zona, cupon=None, fecha=date.today()):
-    subtotal = calcular_subtotal(carrito)
 
-    prendas = 0
+def calcular_total(carrito, zona, cupon=None, fecha=None):
+    if not carrito:
+        raise CheckoutError(
+            "CARRITO_VACIO",
+            "El carrito está vacío"
+        )
+        
+    carrito_normalizado = []
+
     for item in carrito:
-        prendas = prendas + item["cantidad"]
+        copia = item.copy()
+        copia["talle"] = copia["talle"].strip().upper()
+        carrito_normalizado.append(copia)
 
-    descuento = calcular_descuento(subtotal, prendas, cupon, fecha)
+    subtotal = calcular_subtotal(carrito_normalizado)
+
+    cantidad_prendas = sum(
+        item["cantidad"] for item in carrito_normalizado
+    )
+
+    descuento = calcular_descuento(
+        subtotal,
+        cantidad_prendas,
+        cupon,
+        fecha
+    )
+
     envio = calcular_envio(subtotal, zona)
-    total = subtotal - descuento + envio
 
-    resultado = {
-        "subtotal": subtotal,
-        "descuento": descuento,
-        "envio": envio,
-        "total": round(total, 2),
+    total = (subtotal - descuento + envio).quantize(
+        Decimal("0.01")
+    )
+
+    return {
+        "subtotal": subtotal.quantize(Decimal("0.01")),
+        "descuento": descuento.quantize(Decimal("0.01")),
+        "envio": envio.quantize(Decimal("0.01")),
+        "total": total,
     }
-    return resultado
