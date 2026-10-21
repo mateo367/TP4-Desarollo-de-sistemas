@@ -35,6 +35,11 @@ def test_cantidad_diez_es_valida():
     validar_item(item(cantidad=10))
 
 
+def test_cantidad_once_es_invalida():
+    with pytest.raises(CheckoutError):
+        validar_item(item(cantidad=11))
+
+
 def test_cantidad_decimal_es_invalida():
     assert codigo_de_error(
         validar_item, item(cantidad=1.5)
@@ -91,6 +96,15 @@ def test_cupon_vencido_el_dia_siguiente():
         date(2026, 12, 1),
     ) == "CUPON_VENCIDO"
 
+def test_cupon_fijo_acepta_subtotal_minimo():
+    descuento = calcular_descuento(
+        Decimal("20000.00"),
+        1,
+        "BIENVENIDA",
+        HOY_VIGENTE,
+    )
+
+    assert descuento == Decimal("3000.00")
 
 def test_cupon_vigente_en_fecha_limite():
     descuento = calcular_descuento(

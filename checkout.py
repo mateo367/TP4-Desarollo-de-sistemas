@@ -21,7 +21,6 @@ TALLES = ["XS", "S", "M", "L", "XL", "XXL"]
 CUPONES = {
     "EGRESADOS2026": {"tipo": "porcentaje", "valor": 0.15, "vence": date(2026, 11, 30)},
     "BIENVENIDA": {"tipo": "fijo", "valor": 3000, "minimo": 20000},
-    "DEBUG100": {"tipo": "porcentaje", "valor": 1.0, "vence": date(2099, 12, 31)},
 }
 
 ENVIOS = {
@@ -64,12 +63,13 @@ def calcular_subtotal(carrito):
                 f"Producto inexistente: {producto}"
             )
 
-        precio = Decimal(str(CATALOGO[producto]["precio"]))
+        precio = Decimal(str(CATALOGO[producto]))
         cantidad = item["cantidad"]
 
         subtotal += precio * cantidad
 
     return subtotal.quantize(Decimal("0.01"))
+
 
 
 
@@ -84,12 +84,17 @@ def calcular_descuento(
     subtotal = Decimal(str(subtotal))
     descuento = Decimal("0.00")
 
-    if cantidad_prendas >= 5:
-        descuento = subtotal * Decimal("0.10")
-
     codigo = (cupon or "").strip().upper()
 
+    if fecha is None:
+        from datetime import date
+        fecha = date.today()
+
+    # Sin cupón: aplicar descuento por cantidad.
     if not codigo:
+        if cantidad_prendas >= 5:
+            descuento = subtotal * Decimal("0.10")
+
         return descuento.quantize(
             CENTAVO,
             rounding=ROUND_HALF_UP
@@ -103,10 +108,6 @@ def calcular_descuento(
 
     datos = CUPONES[codigo]
 
-    if fecha is None:
-        from datetime import date
-        fecha = date.today()
-
     if datos["tipo"] == "porcentaje":
         if fecha > datos["vence"]:
             raise CheckoutError(
@@ -119,10 +120,13 @@ def calcular_descuento(
     elif datos["tipo"] == "fijo":
         minimo = Decimal(str(datos["minimo"]))
 
-        if subtotal >= minimo:
-            descuento = Decimal(str(datos["valor"]))
-        else:
-            descuento = Decimal("0.00")
+        if subtotal < minimo:
+            raise CheckoutError(
+                "CUPON_MINIMO_NO_ALCANZADO",
+                "El subtotal no alcanza el mínimo requerido"
+            )
+
+        descuento = Decimal(str(datos["valor"]))
 
     else:
         raise CheckoutError(
@@ -134,6 +138,7 @@ def calcular_descuento(
         CENTAVO,
         rounding=ROUND_HALF_UP
     )
+
 
 
 
