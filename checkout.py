@@ -1,5 +1,6 @@
 import json
 from datetime import date
+from decimal import Decimal
 
 
 class CheckoutError(Exception):
@@ -32,7 +33,9 @@ ENVIOS = {
 
 
 def validar_item(item):
-    item["talle"] = item["talle"].upper()
+    talle = item.get("talle")
+    if not isinstance(talle, str) or talle.strip().upper() not in TALLES:
+         CheckoutError("TALLE_INVALIDO", f"Talle inválido: {talle!r}")
 
     if item["talle"] not in TALLES:
         raise CheckoutError("TALLE_INVALIDO", f"Talle inválido: {item['talle']}")
@@ -46,23 +49,32 @@ def validar_item(item):
 
 
 def calcular_subtotal(carrito):
-    subtotal = 0
+    subtotal = Decimal("0.00")
+
     for item in carrito:
         validar_item(item)
-        try:
-            precio = item.get("precio", CATALOGO[item["producto"]])
-        except:
-            continue
-        subtotal += precio * item["cantidad"]
 
-    return round(subtotal, 2)
+        producto = item["producto"]
+
+        if producto not in CATALOGO:
+            raise CheckoutError(
+                "PRODUCTO_INEXISTENTE",
+                f"Producto inexistente: {producto}"
+            )
+
+        precio = Decimal(str(CATALOGO[producto]["precio"]))
+        cantidad = item["cantidad"]
+
+        subtotal += precio * cantidad
+
+    return subtotal.quantize(Decimal("0.01"))
 
 
 def calcular_descuento(subtotal, cantidad_prendas, cupon=None, fecha=date.today()):
-    descuento = 0
+    descuento = Decimal("0.00")
 
     if cantidad_prendas > 5:
-        descuento += subtotal * 0.10
+        descuento += subtotal * Decimal("0.10")
 
     if cupon != None:
         codigo = cupon.strip()
