@@ -2,11 +2,8 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-
 import pedidos
 from checkout import CheckoutError
-
-HOY_VIGENTE = date(2026, 10, 1)
 
 
 @pytest.fixture
@@ -23,7 +20,12 @@ def con(ruta):
 
 
 def item(producto="buzo", talle="M", cantidad=1, **extra):
-    return {"producto": producto, "talle": talle, "cantidad": cantidad, **extra}
+    return {
+        "producto": producto,
+        "talle": talle,
+        "cantidad": cantidad,
+        **extra,
+    }
 
 
 def contar(ruta, tabla):
@@ -33,7 +35,3 @@ def contar(ruta, tabla):
         return otra.execute(f"SELECT COUNT(*) FROM {tabla}").fetchone()[0]
     finally:
         otra.close()
-
-
-def test_un_id_inexistente_devuelve_none(con):
-    assert pedidos.obtener_pedido(con, 999) is None

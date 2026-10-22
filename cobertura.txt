@@ -1,0 +1,209 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.4, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\Usuario\Desktop\TP4-Desarollo-de-sistemas
+plugins: cov-7.1.0
+collected 19 items
+
+test_checkout.py ....FF......FF..FFF                                     [100%]
+
+================================== FAILURES ===================================
+_________________ test_talle_normaliza_sin_modificar_carrito __________________
+
+    def test_talle_normaliza_sin_modificar_carrito():
+        carrito = [item(talle=" m ")]
+        original = [dict(carrito[0])]
+    
+>       resultado = calcular_total(carrito, " CABA ")
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_checkout.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+checkout.py:155: in calcular_total
+    subtotal = calcular_subtotal(carrito)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+checkout.py:57: in calcular_subtotal
+    validar_item(item)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+item = {'producto': 'buzo', 'talle': ' m ', 'cantidad': 1}
+
+    def validar_item(item):
+        talle = item.get("talle")
+        if not isinstance(talle, str) or talle.strip().upper() not in TALLES:
+             CheckoutError("TALLE_INVALIDO", f"Talle inv�lido: {talle!r}")
+    
+        if item["talle"] not in TALLES:
+>           raise CheckoutError("TALLE_INVALIDO", f"Talle inv�lido: {item['talle']}")
+E           checkout.CheckoutError: Talle inv�lido:  m
+
+checkout.py:43: CheckoutError
+_______________ test_subtotal_usa_decimal_y_precio_de_catalogo ________________
+
+    def test_subtotal_usa_decimal_y_precio_de_catalogo():
+>       resultado = calcular_subtotal([
+            item(precio=Decimal("1.00"))
+        ])
+
+test_checkout.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+carrito = [{'producto': 'buzo', 'talle': 'M', 'cantidad': 1, 'precio': Decimal('1.00')}]
+
+    def calcular_subtotal(carrito):
+        subtotal = Decimal("0.00")
+    
+        for item in carrito:
+            validar_item(item)
+    
+            producto = item["producto"]
+    
+            if producto not in CATALOGO:
+                raise CheckoutError(
+                    "PRODUCTO_INEXISTENTE",
+                    f"Producto inexistente: {producto}"
+                )
+    
+>           precio = Decimal(str(CATALOGO[producto]["precio"]))
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: 'float' object is not subscriptable
+
+checkout.py:67: TypeError
+_____________________ test_descuento_fijo_requiere_minimo _____________________
+
+    def test_descuento_fijo_requiere_minimo():
+>       assert codigo_de_error(
+            calcular_descuento,
+            Decimal("19999.99"),
+            1,
+            "BIENVENIDA",
+            HOY_VIGENTE,
+        ) == "CUPON_MINIMO_NO_ALCANZADO"
+
+test_checkout.py:123: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+funcion = <function calcular_descuento at 0x00000200DC550FE0>
+args = (Decimal('19999.99'), 1, 'BIENVENIDA', datetime.date(2026, 10, 1))
+
+    def codigo_de_error(funcion, *args):
+>       with pytest.raises(CheckoutError) as error:
+E       Failed: DID NOT RAISE CheckoutError
+
+test_checkout.py:25: Failed
+______________________ test_cupon_inventado_es_invalido _______________________
+
+    def test_cupon_inventado_es_invalido():
+>       assert codigo_de_error(
+            calcular_descuento,
+            Decimal("30000.00"),
+            1,
+            "DEBUG100",
+            HOY_VIGENTE,
+        ) == "CUPON_INVALIDO"
+
+test_checkout.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+funcion = <function calcular_descuento at 0x00000200DC550FE0>
+args = (Decimal('30000.00'), 1, 'DEBUG100', datetime.date(2026, 10, 1))
+
+    def codigo_de_error(funcion, *args):
+>       with pytest.raises(CheckoutError) as error:
+E       Failed: DID NOT RAISE CheckoutError
+
+test_checkout.py:25: Failed
+______________________ test_zona_inexistente_lanza_error ______________________
+
+    def test_zona_inexistente_lanza_error():
+>       assert codigo_de_error(
+            calcular_envio, Decimal("10000.00"), "PATAGONIA"
+        ) == "ZONA_INVALIDA"
+
+test_checkout.py:151: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+test_checkout.py:26: in codigo_de_error
+    funcion(*args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+subtotal = Decimal('10000.00'), zona = 'PATAGONIA'
+
+    def calcular_envio(subtotal, zona):
+        zona = zona.strip().upper()
+    
+        if zona not in ENVIOS:
+            raise CheckoutError(
+                "ZONA_INVALIDA",
+>               f"Zona inv�lida. Opciones: {ENVIOS.keys().join(', ')}",
+                                            ^^^^^^^^^^^^^^^^^^
+            )
+E           AttributeError: 'dict_keys' object has no attribute 'join'
+
+checkout.py:145: AttributeError
+_______________________ test_carrito_vacio_lanza_error ________________________
+
+    def test_carrito_vacio_lanza_error():
+>       assert codigo_de_error(calcular_total, [], "CABA") == "CARRITO_VACIO"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_checkout.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+funcion = <function calcular_total at 0x00000200DC551120>, args = ([], 'CABA')
+
+    def codigo_de_error(funcion, *args):
+>       with pytest.raises(CheckoutError) as error:
+E       Failed: DID NOT RAISE CheckoutError
+
+test_checkout.py:25: Failed
+________________________ test_total_respeta_la_formula ________________________
+
+    def test_total_respeta_la_formula():
+>       resultado = calcular_total(
+            [item(cantidad=2)], "CABA", fecha=HOY_VIGENTE
+        )
+
+test_checkout.py:161: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+checkout.py:155: in calcular_total
+    subtotal = calcular_subtotal(carrito)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+carrito = [{'producto': 'buzo', 'talle': 'M', 'cantidad': 2}]
+
+    def calcular_subtotal(carrito):
+        subtotal = Decimal("0.00")
+    
+        for item in carrito:
+            validar_item(item)
+    
+            producto = item["producto"]
+    
+            if producto not in CATALOGO:
+                raise CheckoutError(
+                    "PRODUCTO_INEXISTENTE",
+                    f"Producto inexistente: {producto}"
+                )
+    
+>           precio = Decimal(str(CATALOGO[producto]["precio"]))
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: 'float' object is not subscriptable
+
+checkout.py:67: TypeError
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.12.4-final-0 _______________
+
+Name          Stmts   Miss Branch BrPart  Cover   Missing
+---------------------------------------------------------
+checkout.py      74      9     30      6    86%   40, 68-70, 99, 107-108, 123, 128, 159
+---------------------------------------------------------
+TOTAL            74      9     30      6    86%
+=========================== short test summary info ===========================
+FAILED test_checkout.py::test_talle_normaliza_sin_modificar_carrito - checkou...
+FAILED test_checkout.py::test_subtotal_usa_decimal_y_precio_de_catalogo - Typ...
+FAILED test_checkout.py::test_descuento_fijo_requiere_minimo - Failed: DID NO...
+FAILED test_checkout.py::test_cupon_inventado_es_invalido - Failed: DID NOT R...
+FAILED test_checkout.py::test_zona_inexistente_lanza_error - AttributeError: ...
+FAILED test_checkout.py::test_carrito_vacio_lanza_error - Failed: DID NOT RAI...
+FAILED test_checkout.py::test_total_respeta_la_formula - TypeError: 'float' o...
+======================== 7 failed, 12 passed in 0.14s =========================
